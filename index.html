@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lotteria QR</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Lotteria QR</h1>
+        <div id="result"></div>
+        <div id="code"></div>
+        <div id="adminPanel" style="display: none;">
+            <input type="password" id="adminPassword" placeholder="Password Admin">
+            <button id="adminLogin">Accedi</button>
+            <div id="stats"></div>
+        </div>
+    </div>
+    <button id="showAdmin" style="position: fixed; bottom: 10px; right: 10px; opacity: 0.1;">Admin</button>
+    <script src="script.js"></script>
+</body>
+</html>
