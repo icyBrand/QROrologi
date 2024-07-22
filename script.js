@@ -12,10 +12,19 @@ function getStats() {
     };
 }
 
-function updateStats(won) {
+function getWinningCodes() {
+    return JSON.parse(localStorage.getItem('winningCodes') || '[]');
+}
+
+function updateStats(won, uniqueCode = null) {
     let stats = getStats();
     stats.totalScans++;
-    if (won) stats.totalWins++;
+    if (won) {
+        stats.totalWins++;
+        let winningCodes = getWinningCodes();
+        winningCodes.push({code: uniqueCode, date: new Date().toISOString()});
+        localStorage.setItem('winningCodes', JSON.stringify(winningCodes));
+    }
     localStorage.setItem('totalScans', stats.totalScans.toString());
     localStorage.setItem('totalWins', stats.totalWins.toString());
     return stats;
@@ -26,10 +35,10 @@ function playLottery() {
     const codeElement = document.getElementById('code');
     
     const won = Math.random() < WINNING_PROBABILITY;
-    const stats = updateStats(won);
+    let uniqueCode = null;
     
     if (won) {
-        const uniqueCode = generateUniqueCode();
+        uniqueCode = generateUniqueCode();
         resultElement.textContent = "Hai vinto!";
         resultElement.style.color = "#28a745";
         codeElement.textContent = `Codice: ${uniqueCode}`;
@@ -39,19 +48,28 @@ function playLottery() {
         codeElement.textContent = "";
     }
 
+    const stats = updateStats(won, uniqueCode);
+
     // Aggiorna le statistiche nel pannello admin se è visibile
     if (document.getElementById('adminPanel').style.display !== 'none') {
         showStats();
     }
 
     // Qui dovresti inviare i dati al server
-    // sendStatsToServer(stats, won);
+    // sendStatsToServer(stats, won, uniqueCode);
 }
 
 function showStats() {
     const stats = getStats();
+    const winningCodes = getWinningCodes();
     const statsElement = document.getElementById('stats');
-    statsElement.textContent = `Totale scansioni: ${stats.totalScans} | Totale vincite: ${stats.totalWins}`;
+    statsElement.innerHTML = `
+        <p>Totale scansioni: ${stats.totalScans} | Totale vincite: ${stats.totalWins}</p>
+        <h3>Codici vincenti:</h3>
+        <ul>
+            ${winningCodes.map(win => `<li>${win.code} - ${new Date(win.date).toLocaleString()}</li>`).join('')}
+        </ul>
+    `;
 }
 
 function adminLogin() {
@@ -63,11 +81,6 @@ function adminLogin() {
     } else {
         alert('Password errata!');
     }
-}
-
-// Funzione per inviare i dati al server (da implementare)
-function sendStatsToServer(stats, won) {
-    // Implementa qui la logica per inviare i dati al tuo server
 }
 
 // Event listeners
