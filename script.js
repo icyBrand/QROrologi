@@ -1,5 +1,6 @@
 const WINNING_PROBABILITY = 0.01; // 1% di probabilità di vincita
 const ADMIN_PASSWORD = "password123"; // Cambia questa con una password sicura
+const SCAN_COOLDOWN = 5 * 60 * 1000; // 5 minuti in millisecondi
 
 function generateUniqueCode() {
     return Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -30,9 +31,27 @@ function updateStats(won, uniqueCode = null) {
     return stats;
 }
 
+function canScan() {
+    const lastScanTime = localStorage.getItem('lastScanTime');
+    if (!lastScanTime) return true;
+    
+    const timeSinceLastScan = Date.now() - parseInt(lastScanTime);
+    return timeSinceLastScan > SCAN_COOLDOWN;
+}
+
 function playLottery() {
     const resultElement = document.getElementById('result');
     const codeElement = document.getElementById('code');
+    
+    if (!canScan()) {
+        const timeLeft = Math.ceil((SCAN_COOLDOWN - (Date.now() - parseInt(localStorage.getItem('lastScanTime')))) / 1000 / 60);
+        resultElement.textContent = `Attendi ${timeLeft} minuti prima di scansionare di nuovo.`;
+        resultElement.style.color = "#dc3545";
+        codeElement.textContent = "";
+        return;
+    }
+    
+    localStorage.setItem('lastScanTime', Date.now().toString());
     
     const won = Math.random() < WINNING_PROBABILITY;
     let uniqueCode = null;
@@ -50,12 +69,10 @@ function playLottery() {
 
     const stats = updateStats(won, uniqueCode);
 
-    // Aggiorna le statistiche nel pannello admin se è visibile
     if (document.getElementById('adminPanel').style.display !== 'none') {
         showStats();
     }
 
-    // Qui dovresti inviare i dati al server
     // sendStatsToServer(stats, won, uniqueCode);
 }
 
@@ -83,9 +100,15 @@ function adminLogin() {
     }
 }
 
-// Event listeners
 window.onload = function() {
-    playLottery();
+    if (canScan()) {
+        playLottery();
+    } else {
+        const resultElement = document.getElementById('result');
+        const timeLeft = Math.ceil((SCAN_COOLDOWN - (Date.now() - parseInt(localStorage.getItem('lastScanTime')))) / 1000 / 60);
+        resultElement.textContent = `Attendi ${timeLeft} minuti prima di scansionare di nuovo.`;
+        resultElement.style.color = "#dc3545";
+    }
     document.getElementById('showAdmin').addEventListener('click', function() {
         document.getElementById('adminPanel').style.display = 'block';
     });
