@@ -1,6 +1,5 @@
 const WINNING_PROBABILITY = 0.01; // 1% di probabilità di vincita
 const ADMIN_PASSWORD = "password123"; // Cambia questa con una password sicura
-const SCAN_COOLDOWN = 5 * 60 * 1000; // 5 minuti in millisecondi
 
 function generateUniqueCode() {
     return Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -31,27 +30,29 @@ function updateStats(won, uniqueCode = null) {
     return stats;
 }
 
-function canScan() {
-    const lastScanTime = localStorage.getItem('lastScanTime');
-    if (!lastScanTime) return true;
-    
-    const timeSinceLastScan = Date.now() - parseInt(lastScanTime);
-    return timeSinceLastScan > SCAN_COOLDOWN;
+function hasScanned(qrId) {
+    const scannedCodes = JSON.parse(localStorage.getItem('scannedCodes') || '[]');
+    return scannedCodes.includes(qrId);
 }
 
-function playLottery() {
+function markAsScanned(qrId) {
+    const scannedCodes = JSON.parse(localStorage.getItem('scannedCodes') || '[]');
+    scannedCodes.push(qrId);
+    localStorage.setItem('scannedCodes', JSON.stringify(scannedCodes));
+}
+
+function playLottery(qrId) {
     const resultElement = document.getElementById('result');
     const codeElement = document.getElementById('code');
     
-    if (!canScan()) {
-        const timeLeft = Math.ceil((SCAN_COOLDOWN - (Date.now() - parseInt(localStorage.getItem('lastScanTime')))) / 1000 / 60);
-        resultElement.textContent = `Attendi ${timeLeft} minuti prima di scansionare di nuovo.`;
+    if (hasScanned(qrId)) {
+        resultElement.textContent = "Questo QR code è già stato scansionato.";
         resultElement.style.color = "#dc3545";
         codeElement.textContent = "";
         return;
     }
     
-    localStorage.setItem('lastScanTime', Date.now().toString());
+    markAsScanned(qrId);
     
     const won = Math.random() < WINNING_PROBABILITY;
     let uniqueCode = null;
@@ -73,7 +74,7 @@ function playLottery() {
         showStats();
     }
 
-    // sendStatsToServer(stats, won, uniqueCode);
+    // sendStatsToServer(stats, won, uniqueCode, qrId);
 }
 
 function showStats() {
@@ -101,14 +102,17 @@ function adminLogin() {
 }
 
 window.onload = function() {
-    if (canScan()) {
-        playLottery();
+    const urlParams = new URLSearchParams(window.location.search);
+    const qrId = urlParams.get('id') || 'default';
+    
+    if (!hasScanned(qrId)) {
+        playLottery(qrId);
     } else {
         const resultElement = document.getElementById('result');
-        const timeLeft = Math.ceil((SCAN_COOLDOWN - (Date.now() - parseInt(localStorage.getItem('lastScanTime')))) / 1000 / 60);
-        resultElement.textContent = `Attendi ${timeLeft} minuti prima di scansionare di nuovo.`;
+        resultElement.textContent = "Questo QR code è già stato scansionato.";
         resultElement.style.color = "#dc3545";
     }
+    
     document.getElementById('showAdmin').addEventListener('click', function() {
         document.getElementById('adminPanel').style.display = 'block';
     });
