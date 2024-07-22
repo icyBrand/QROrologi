@@ -38,13 +38,35 @@ function updateStats(won) {
     return stats;
 }
 
+function updateTimer() {
+    const lastPlayTime = getLastPlayTime();
+    if (!lastPlayTime) return;
+
+    const timeSinceLastPlay = Date.now() - parseInt(lastPlayTime);
+    const timeLeft = COOLDOWN_HOURS * 60 * 60 * 1000 - timeSinceLastPlay;
+
+    if (timeLeft > 0) {
+        const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+        const timerElement = document.getElementById('timer');
+        timerElement.textContent = `Tempo rimanente: ${hours}h ${minutes}m ${seconds}s`;
+        setTimeout(updateTimer, 1000);
+    } else {
+        document.getElementById('timer').textContent = '';
+        playLottery();
+    }
+}
+
 function playLottery() {
     const resultElement = document.getElementById('result');
     const codeElement = document.getElementById('code');
+    const timerElement = document.getElementById('timer');
     
     if (!canPlay()) {
-        const timeLeft = Math.ceil((COOLDOWN_HOURS * 60 * 60 * 1000 - (Date.now() - getLastPlayTime())) / (1000 * 60 * 60));
-        resultElement.textContent = `Devi attendere ancora ${timeLeft} ore prima di giocare di nuovo.`;
+        updateTimer();
+        resultElement.textContent = "Devi attendere prima di giocare di nuovo.";
         resultElement.style.color = "#dc3545";
         codeElement.textContent = "";
         return;
@@ -66,6 +88,8 @@ function playLottery() {
     }
 
     updateStats(won);
+    timerElement.textContent = "";
+    setTimeout(updateTimer, 1000);
     // sendResultToServer(won, uniqueCode);
 }
 
